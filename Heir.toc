@@ -1,0 +1,14 @@
+## Interface: 70100
+## Title: Heir to the Pwn |cffffffff0.50|r
+## Version: 0.50
+## X-Category: Chat/Communication
+## SavedVariablesPerCharacter: HeirCharacterDB
+## SavedVariables: HeirDB
+## X-CompatibleLocales: enUS, enGB
+
+Libs\ChatThrottleLib\ChatThrottleLib.lua
+
+Util.lua
+Debug.lua
+UI.lua
+Heir.lua
