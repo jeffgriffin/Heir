@@ -1,4 +1,4 @@
-## Interface: 70100
+## Interface: 70300
 ## Title: Heir to the Pwn |cffffffff0.50|r
 ## Version: 0.50
 ## X-Category: Chat/Communication

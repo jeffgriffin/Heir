@@ -55,6 +55,7 @@ function Heir.AddHeir(name)
   HeirCharacterDB.Heirs = HeirCharacterDB.Heirs or {}
   HeirCharacterDB.Heirs[name] = 1
   ChatThrottleLib:SendAddonMessage("NORMAL", HeirAddonName, "ackAdd", "WHISPER", name)
+  print(format("|cffff8000 Heir:|r %s enrolled.  Synchronizing lists.", name))
   SynchronizeToFamily()
 end
 
@@ -134,14 +135,14 @@ function Heir.WhitelistCommunication(...)
 end
 
 local function Command(cmd, source, ...)
-  Heir.DebugFormat("Command", "cmd", cmd, "source", source, "...", {...})
+  -- Heir.DebugFormat("Command", "cmd", cmd, "source", source, "...", {...})
   local sourceName, sourceRealm = strsplit("-", source)
   if sourceRealm and sourceRealm~=GetRealmName() then return end
   if not cmd then
   elseif cmd=="enroll" then
     EnrollToBenefactor(sourceName)
   elseif cmd=="add" then
-    if HeirCharacterDB.Heirs[sourceName] then
+    if HeirCharacterDB.Heirs and HeirCharacterDB.Heirs[sourceName] then
       Heir.AddHeir(sourceName)
     else
       HeirUI.ShowAddHeir(sourceName)
@@ -188,28 +189,41 @@ function Heir.ADDON_LOADED(event, name)
         return IsBenefactor() and HeirDB.Players[GetRealmQualifiedName(name, realm)]~=nil
     end
 
-    local function NameIsFriendOrGuildmate(name)
-        if not name then end
-        for i = 1, select(2, BNGetNumFriends()) do
-            if name == select(5,BNGetFriendInfo(i)) then
-                return true
-            end
+    local function NameOrPlayerIsFriendOrGuildmate(name, realm) --should be player
+      if not name then end
+      if not realm or (realm == GetRealmName()  or realm == "") then
+        for i = 1, select(2, GetNumFriends()) do
+          if name == GetFriendInfo(i) then
+            return true
+          end
         end
         for i = 1, GetNumGuildMembers() do
-            if name == GetGuildRosterInfo(i) then
-                return true
-            end
+          if name == GetGuildRosterInfo(i) then
+              return true
+          end
         end
+      end
+      if realm then
+        for friendIndex = 1, select(2, BNGetNumFriends()) do
+          for accountIndex = 1, BNGetNumFriendGameAccounts(friendIndex) do
+            local _, characterName, _, realmName = BNGetFriendGameAccountInfo(friendIndex, accountIndex)
+            if name == friendCharName and realm == friendRealm then
+              return true
+            end
+          end
+        end
+      end
     end
 
     local function NameIsAllowed(name)
-        return NameIsFriendOrGuildmate(name) or (nameWhitelist and nameWhitelist[name])
+        return NameOrPlayerIsFriendOrGuildmate(name) or (nameWhitelist and nameWhitelist[name])
     end
 
     local function PlayerIsAllowedForCommunication(name, realm)
         if realm == GetRealmName() then
-            return NameIsFriendOrGuildmate(name) or (commWhitelist and commWhitelist[GetRealmQualifiedName(name, realm)])
+            return NameOrPlayerIsFriendOrGuildmate(name, realm)
         end
+        return commWhitelist and commWhitelist[GetRealmQualifiedName(name, realm)]
     end
     
     local function IsHiddenUnitName(unit)
@@ -259,13 +273,16 @@ function Heir.ADDON_LOADED(event, name)
         "CHAT_MSG_BATTLEGROUND_LEADER",
         "CHAT_MSG_CHANNEL",
         "CHAT_MSG_EMOTE",
+        "CHAT_MSG_LOOT", --name is ... 3, but is it just group/self anyway?
+        "CHAT_MSG_MONSTER_EMOTE", --filterable with object arg
         "CHAT_MSG_PARTY",
         "CHAT_MSG_PARTY_LEADER",
         "CHAT_MSG_RAID",
         "CHAT_MSG_RAID_LEADER",
         "CHAT_MSG_RAID_WARNING",
         "CHAT_MSG_SAY",
-        "CHAT_MSG_TEXT_EMOTE",
+        "CHAT_MSG_SYSTEM", --no object arg
+        "CHAT_MSG_TEXT_EMOTE", --no object arg
         "CHAT_MSG_WHISPER",
         "CHAT_MSG_YELL"
       }
@@ -274,9 +291,15 @@ function Heir.ADDON_LOADED(event, name)
         return name == UnitFullName("player")
       end
       local function FilterChatMessage(chatFrame, event, msg, author, ...)
-        --Heir.DebugFormat("FilterChatMessage", "event", event, "msg", msg, "author", author)
-        if author=="" then return false, msg, author, ... end
         local guid = select(10, ...)
+        if IsHeir() then
+          if event == "CHAT_MSG_SYSTEM" or event == "CHAT_MSG_TEXT_EMOTE" then return true end
+          if event == "CHAT_MSG_MONSTER_EMOTE" then
+            Heir.DebugFormat("CHAT_MSG_MONSTER_EMOTE", "msg", msg, "...", {...})
+            return true -- for now
+          end
+        end
+        if author=="" then return false, msg, author, ... end
         if guid then
           local name, realm = select(6, GetPlayerInfoByGUID(guid))
           local rqn = nil
@@ -343,7 +366,12 @@ function Heir.ADDON_LOADED(event, name)
     
     local function SetPartyInviteFilter()
         function Heir.PARTY_INVITE_REQUEST(event, name, tank, healer, damage, isXRealm, allowMultipleRoles, inviterGuid)
-            if not NameIsAllowed(name) then
+          local playerName, realm = select(6, GetPlayerInfoByGUID(inviterGuid))
+          if realm=="" then
+            realm = GetRealmName()
+          end
+          Heir.DebugFormat("PARTY_INVITE_REQUEST", "playerName", playerName, "realm", realm, "inviterGuid", inviterGuid)
+            if not PlayerIsAllowedForCommunication(playerName, realm) then
                 DeclineGroup()
             end
         end
