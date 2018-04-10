@@ -15,7 +15,7 @@ This is not a babysitter or a replacement for Blizzard's language filter or pare
 
 * Functional Settings - Additionally, the folloiwing settings are required in order for the addon to be able to do its job: Show Friendly Player Names Off, Show Friendly Minion Names Off, Show Enemy Player Names Off, Show Enemy Minion Names Off, Show Friendly Nameplates On, Show Friendly Minion Nameplates On, Show Enemy Nameplates On, Show Enemy Minion Nameplates On.  One caveat to the above is if your child would like to see player nameplates, you can turn on Always Show Nameplates.  In which case, Show Friendly Player Names, Show Friendly Minion Names, Show Enemy Player Names, and Show Enemy Minion Names, can be toggled back on.
 
-![alt text](https://github.com/jeffgriffin/Heir/blob/jgriffin/settings.jpg "Always Show Nameplates")
+![alt text](https://raw.githubusercontent.com/jeffgriffin/Heir/jgriffin/settings.jpg "Always Show Nameplates")
 
 ## Getting Started
 1. Log into both parent and child accounts with Heir to the Pwn installed to both.
