@@ -254,6 +254,7 @@ function Heir.ADDON_LOADED(event, name)
     end
     
     local function FilterNameFrame(frame)
+      if not UnitIsPlayer(frame.unit) and not UnitIsOtherPlayersPet(frame.unit) then return end --prevents taint error
       if frame.unit and IsHeir() then
         local genericName = GetFilteredUnitName(frame.unit, true)
         --Heir.DebugFormat("FilterNameFrame", "genericName", genericName)
@@ -262,7 +263,6 @@ function Heir.ADDON_LOADED(event, name)
           return
         end
       end
-      --Heir.DebugFormat("FilterNameFrame", "frame.name:GetText()", (frame.name:GetText()), "UnitFullName(frame.unit)", (UnitFullName(frame.unit)))
       frame.name:SetText(PrepareWhitelistedName((UnitFullName(frame.unit)), frame.name:GetText()))
     end
     
@@ -294,9 +294,8 @@ function Heir.ADDON_LOADED(event, name)
         local guid = select(10, ...)
         if IsHeir() then
           if event == "CHAT_MSG_SYSTEM" or event == "CHAT_MSG_TEXT_EMOTE" then return true end
-          if event == "CHAT_MSG_MONSTER_EMOTE" then
-            Heir.DebugFormat("CHAT_MSG_MONSTER_EMOTE", "msg", msg, "...", {...})
-            return true -- for now
+          if event == "CHAT_MSG_MONSTER_EMOTE" and not NameIsAllowed((select(3, ...))) then
+            return true
           end
         end
         if author=="" then return false, msg, author, ... end
