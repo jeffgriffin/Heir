@@ -247,9 +247,11 @@ function Heir.ADDON_LOADED(event, name)
     end
     
     local function GetFilteredUnitName(unit, useEmptyPlayer)
-      if IsHiddenPlayerName(unit) then return useEmptyPlayer and "" or "Player"
+      if IsHiddenPlayerName(unit) then return useEmptyPlayer and "" or "Player", true
       elseif IsHiddenPetName(unit) then 
-        return UnitCreatureFamily(unit)
+        return UnitCreatureFamily(unit), true
+      else
+          return nil, false
       end
     end
     
@@ -339,8 +341,8 @@ function Heir.ADDON_LOADED(event, name)
     
     local function SetTooltipFilter()
         local function FilterTooltip(unit)
-            --Heir.DebugFormat("GameTooltip_UnitColor", "unit", unit)
-            local genericName = GetFilteredUnitName(unit)
+            local genericName, isUnit = GetFilteredUnitName(unit)
+            if not isUnit then return end
             if not genericName or not IsHeir() then 
                 GameTooltipTextLeft1:SetText(PrepareWhitelistedName((UnitFullName(unit)), GameTooltipTextLeft1:GetText()))
             else
